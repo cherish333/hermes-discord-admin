@@ -129,7 +129,7 @@ def _action_channel_list(args: Dict[str, Any]) -> Dict[str, Any]:
         }
         for c in (res["data"] or [])
     ]
-    return {"ok": True, "count": len(slim), "channels": slim}
+    return {"ok": True, "status": res["status"], "data": {"count": len(slim), "channels": slim}}
 
 
 def _action_channel_create(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -190,9 +190,9 @@ def _action_channel_send(args: Dict[str, Any]) -> Dict[str, Any]:
         body["tts"] = True
     res = _http("POST", f"/channels/{channel_id}/messages", body)
     if res["ok"] and isinstance(res.get("data"), dict):
-        # Slim response — agent doesn't need the full message
+        # Slim the data payload — agent doesn't need the full message object
         d = res["data"]
-        return {"ok": True, "message_id": d.get("id"), "channel_id": d.get("channel_id")}
+        res["data"] = {"message_id": d.get("id"), "channel_id": d.get("channel_id")}
     return res
 
 
@@ -225,19 +225,19 @@ ACTIONS = {
 # Tool entry
 # ---------------------------------------------------------------------------
 
-def handle_discord_admin(args: Dict[str, Any]) -> Dict[str, Any]:
-    """Dispatch on 'action' field."""
+def handle_discord_admin(args: Dict[str, Any], **_kwargs) -> str:
+    """Dispatch on 'action' field. Returns JSON string (per Hermes tool contract)."""
     action = args.get("action")
     if not action:
-        return {"ok": False, "error": f"action required; choose one of {sorted(ACTIONS)}"}
+        return json.dumps({"ok": False, "error": f"action required; choose one of {sorted(ACTIONS)}"}, ensure_ascii=False)
     fn = ACTIONS.get(action)
     if not fn:
-        return {"ok": False, "error": f"unknown action '{action}'; valid: {sorted(ACTIONS)}"}
+        return json.dumps({"ok": False, "error": f"unknown action '{action}'; valid: {sorted(ACTIONS)}"}, ensure_ascii=False)
     try:
-        return fn(args)
+        return json.dumps(fn(args), ensure_ascii=False)
     except Exception as exc:
         logger.exception("discord_admin action %s failed", action)
-        return {"ok": False, "error": f"internal error: {exc}"}
+        return json.dumps({"ok": False, "error": f"internal error: {exc}"}, ensure_ascii=False)
 
 
 # ---------------------------------------------------------------------------
