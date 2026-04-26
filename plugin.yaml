@@ -1,0 +1,5 @@
+name: discord-admin
+version: 0.1.0
+description: "Discord server administration for Hermes — manage channels, send messages, add reactions via Discord REST API v10. Requires DISCORD_BOT_TOKEN in ~/.hermes/.env."
+author: "Cuizhipeng"
+homepage: "https://github.com/cherish333/hermes-discord-admin"
